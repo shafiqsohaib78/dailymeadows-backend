@@ -632,6 +632,7 @@ class PostCreateView(APIView):
                             if user1.is_active:
                                 checkP = Posts.objects.get(
                                     user__id=refresh['id'], slug=slug)
+                                print("checkP",checkP)
                                 if checkP:
                                     checkP.user = user1
                                     checkP.title = title
@@ -650,7 +651,7 @@ class PostCreateView(APIView):
 
                                     print(categoryP)
 
-                                    read_minP.post = categoryP
+                                    read_minP.post = checkP
                                     read_minP.read_min = read_min
                                     read_minP.save()
                                     print(read_minP)
@@ -3063,9 +3064,10 @@ class DraftPostsCreateView(APIView):
         category1 = json.loads(category)
         # print("category", category)
         test1 = json.loads(description)
+        draft_post = DraftPosts()
         # print(title)
         # print(meta)
-        # print(user)
+        print(slug)
         try:
             size = asizeof.asizeof(test1)/1024
             if size >= 1000:
@@ -3074,40 +3076,62 @@ class DraftPostsCreateView(APIView):
                 return Response({"message": "There should be title/meta/description of the post."}, status=status.HTTP_400_BAD_REQUEST)
             if user is not None:
                 refresh = RefreshToken(user)
+                print(refresh['id'])
                 if refresh['id'] is not None:
-                    # categoryP = CategoryPosts()
-                    # read_minP = ReadMinutesOfPosts()
                     user1 = User.objects.get(id=refresh['id'])
+                    is_active=user1.is_active # To Check if user is active
+                    
+                    # read_minP = ReadMinutesOfPosts()
+                    checkP = DraftPosts.objects.filter(
+                                user__id=refresh['id'], slug=slug) # To Check if there is any previous Draft Post Existed
+                    is_checkP=not checkP # To Check if checkP is None or an object
+                    # print("user",user1)
+                    # print("checkP",checkP)
+                    # print("checkP",not checkP)
+                    
+                    
                     try:
-                        if slug is not None and DraftPosts.objects.filter(id=refresh['id'], slug=slug).exists():
-                            checkP = DraftPosts.objects.get(
-                                id=refresh['id'], slug=slug)
-                            if user1.isActive:
-                                checkP.user = user1
-                                checkP.title = title
-                                checkP.meta = meta
-                                checkP.description = description
-                                checkP.category = category1
-                                checkP.read_min = read_min
-                                print(checkP)
-                                checkP.save()
+                        print("inside try")
+                        if is_active:
+                            print("is_active")
+                            if is_checkP:
+                                print("not checkP")
+                                draft_post.user = user1
+                                draft_post.title = title
+                                draft_post.meta = meta
+                                draft_post.description = description
+                                draft_post.category = category1
+                                draft_post.read_min = read_min
+                                draft_post.save()
+                                print(draft_post)
                                 print("done")
+                                    # if user1.isActive:
+                                    #     checkP.user = user1
+                                    #     checkP.title = title
+                                    #     checkP.meta = meta
+                                    #     checkP.description = description
+                                    #     checkP.category = category1
+                                    #     checkP.read_min = read_min
+                                    #     print(checkP)
+                                    #     checkP.save()
+                                    #     print("done")
 
-                                # categoryP.post = checkP
-                                # categoryP.category = category1
-                                # categoryP.save()
+                                        # categoryP.post = checkP
+                                        # categoryP.category = category1
+                                        # categoryP.save()
 
-                                # print(categoryP)
+                                        # print(categoryP)
 
-                                # read_minP.post = categoryP
-                                # read_minP.read_min = read_min
-                                # read_minP.save()
-                                # print(read_minP)
-                                return Response({"message": "Draft Successfully Updated"}, status=status.HTTP_200_OK)
-                        else:
-                            post = DraftPosts()
-                            if user1.is_active:
-                                post.user = user1
+                                        # read_minP.post = categoryP
+                                        # read_minP.read_min = read_min
+                                        # read_minP.save()
+                                        # print(read_minP)
+                                return Response({"message": "Draft Successfully Created"}, status=status.HTTP_200_OK)
+                            else:
+                                print("there is a post")
+                                post = DraftPosts.objects.get(
+                                    user__id=refresh['id'], slug=slug)
+                                # post.user = user1
                                 post.title = title
                                 post.meta = meta
                                 post.description = description
@@ -3116,20 +3140,21 @@ class DraftPostsCreateView(APIView):
                                 print("post-->", post)
                                 post.save()
 
-                                # categoryP.post = checkP
-                                # categoryP.category = category1
-                                # categoryP.save()
+                                    # categoryP.post = checkP
+                                    # categoryP.category = category1
+                                    # categoryP.save()
 
-                                # print(categoryP)
+                                    # print(categoryP)
 
-                                # read_minP.post = categoryP
-                                # read_minP.read_min = read_min
-                                # read_minP.save()
-                                # print(read_minP)
-                                return Response({"message": "Draft Post Created"}, status=status.HTTP_200_OK)
+                                    # read_minP.post = categoryP
+                                    # read_minP.read_min = read_min
+                                    # read_minP.save()
+                                    # print(read_minP)
+                                return Response({"message": "Draft Post Updated"}, status=status.HTTP_200_OK)
+                        else:
                             return Response({"message": "Your Account Is Suspended."}, status=status.HTTP_400_BAD_REQUEST)
                     except Exception:
-                        return Response(status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"message": "Annomouse Reason"},status=status.HTTP_400_BAD_REQUEST)
             return Response({"message": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception:
             return Response({"message": "Story Detail exceeds max size limit.", "size": round(size/1024, 2)}, status=status.HTTP_403_FORBIDDEN)
@@ -3217,6 +3242,7 @@ class DraftPostsEditDetail(APIView):
                 "meta": queryset.meta,
                 "description": queryset.description,
                 "category": queryset.category,
+                "read_min": queryset.category,
                 "user": queryset.user.unique_id
             }
             print("user->>", data)
@@ -3232,19 +3258,16 @@ class DraftPostsSingleGetView(generics.ListAPIView):
 
     def get_queryset(self):
         post = self.request.query_params.get('post')
-        test = DraftPosts.objects.filter(slug=post)
-        if test:
-            return test
+        if not (test := DraftPosts.objects.filter(slug=post).exists()):
+            raise ValidationError("Post not found.")
         else:
-            raise ValidationError("DraftPosts not found.")
+            return DraftPosts.objects.filter(slug=post)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        # print(self.request.query_params.get('post'))
         context.update(
             {
                 "post": self.request.query_params.get('post'),
-                "user": self.request.query_params.get('user'),
             }
         )
         return context

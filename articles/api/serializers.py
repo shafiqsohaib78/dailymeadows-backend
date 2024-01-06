@@ -70,11 +70,13 @@ class PostGetSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     date = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
+    read_min = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
 
     class Meta:
         model = Posts
         fields = ['id', 'user', 'name', 'title',
-                  'meta', 'description', 'slug', 'image', 'date', 'read_min']
+                  'meta', 'description', 'slug','category', 'image', 'date', 'read_min']
 
     def get_image(self, obj):
         return firstImage(obj.description)
@@ -84,6 +86,14 @@ class PostGetSerializer(serializers.ModelSerializer):
 
     def get_name(self, obj):
         return obj.user.name
+    
+    def get_read_min(self, obj):
+        min = ReadMinutesOfPosts.objects.get(post__id=obj.id)
+        return min.read_min
+    
+    def get_category(self, obj):
+        category = CategoryPosts.objects.get(post__id=obj.id)
+        return category.category
 
     def get_date(self, obj):
         # print(obj.date.strftime("%b %d, %Y"))
@@ -333,7 +343,7 @@ class DraftPostsGetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DraftPosts
-        fields = ['id', 'user', 'title', 'meta', 'description', 'slug', 'date']
+        fields = ['id', 'user', 'title', 'meta', 'description','category','read_min', 'slug', 'date']
 
 
 class DraftPostsAccGeneralSerializer(serializers.ModelSerializer):
